@@ -1,59 +1,68 @@
-# PRACTICA 5: Buses de Comunicación I (Introducción y I2C)
+# Práctica 5: Buses de Comunicación I (Introducción y I2C)
 
-## Descripción
-El objetivo de esta práctica es comprender el funcionamiento de los buses de comunicación entre periféricos, que pueden ser internos o externos al procesador. Esta es la primera práctica de una serie de cuatro donde se estudiarán los buses I2C, SPI, I2S y USART. En cada caso, realizaremos una práctica donde controlaremos un periférico de ejemplo.
+## Objetivo
+El objetivo de esta práctica es comprender el funcionamiento de los buses de comunicación entre periféricos, específicamente el bus I2C. Aprenderemos a controlar un periférico de ejemplo: un display OLED SSD1306.
 
 ## Introducción Teórica
 
-### Función del Bus
-El bus permite la conexión lógica entre los subsistemas del computador, transmitiendo señales eléctricas a través de conductores metálicos con la ayuda de circuitos integrados que manejan un protocolo para transmitir datos útiles, direcciones y señales de control.
+### Buses de Comunicación
+- **Bus Paralelo**: Envía datos por bytes simultáneamente a través de varias líneas.
+- **Bus Serie**: Envía datos bit a bit por pocos conductores. Ejemplos: USB, SATA, SPI, I2C.
 
-### Tipos de Buses
-1. **Bus Paralelo**: Envía datos por bytes simultáneamente a través de varias líneas dedicadas.
-2. **Bus Serie**: Envía datos bit a bit y los reconstruye mediante registros o rutinas. Ejemplos incluyen USB, SATA, RS232, SPI, I2C e I2S.
+### Bus I2C
+Desarrollado por Philips en 1982, el bus I2C (Inter-Integrated Circuit) permite la comunicación entre dispositivos usando solo dos cables: uno para la señal de reloj (SCL) y otro para los datos (SDA).
 
-## Bus I2C
-El estándar I2C, desarrollado por Philips en 1982, requiere únicamente dos cables: uno para la señal de reloj (CLK) y otro para el envío de datos (SDA). Cada dispositivo tiene una dirección única, y la arquitectura es de tipo maestro-esclavo, donde el maestro inicia la comunicación.
+#### Características:
+- **Dirección única para cada dispositivo**: 7 bits de dirección.
+- **Arquitectura maestro-esclavo**: El maestro inicia la comunicación.
+- **Resistencias de Pull-UP**: Necesarias para mantener las líneas a Vcc.
 
-### Funcionamiento del Bus I2C
-La comunicación se realiza mediante tramas que incluyen:
-- 7 bits para la dirección del dispositivo esclavo.
-- 1 bit para indicar si se desea enviar o recibir información.
-- 1 bit de validación.
-- Datos enviados o recibidos del esclavo.
-- Otro bit de validación.
+## Conexiones
 
-## Ventajas y Desventajas del Bus I2C
+### ESP32 y OLED SSD1306
 
-### Ventajas
-- Requiere pocos cables.
-- Mecanismos para verificar la llegada de la señal.
+| I2C Device | ESP32                   |
+|------------|-------------------------|
+| SDA        | GPIO 21 (default)       |
+| SCL        | GPIO 22 (default)       |
+| GND        | GND                     |
+| VCC        | 3.3V o 5V               |
 
-### Desventajas
-- Velocidad media-baja.
-- No es full duplex (es half duplex).
-- No hay verificación de que el contenido del mensaje es correcto (solo de la llegada del mensaje).
-
-## Ejercicio Práctico 1: Escáner I2C
-Programar el siguiente código y colocar varios dispositivos I2C.
+### Ejemplo de Código: Escáner I2C
 
 ```cpp
-#include <Arduino.h> 
-#include <Wire.h> 
+#include <Arduino.h>
+#include <Wire.h>
 
-void setup() { 
-  Wire.begin(); 
-  Serial.begin(115200); 
-  while (!Serial);             // Leonardo: wait for serial monitor 
-  Serial.println("\nI2C Scanner"); 
-} 
+void setup() {
+  Wire.begin();
+  Serial.begin(115200);
+  while (!Serial);
+  Serial.println("\nI2C Scanner");
+}
 
-void loop() { 
-  byte error, address; 
-  int nDevices; 
-  
-  Serial.println("Scanning..."); 
-  nDevices = 0; 
-  for(address = 1; address < 127; address++ ) { 
-    Wire.beginTransmission(address); 
-    error = Wire.endT
+void loop() {
+  byte error, address;
+  int nDevices;
+
+  Serial.println("Scanning...");
+  nDevices = 0;
+  for (address = 1; address < 127; address++) {
+    Wire.beginTransmission(address);
+    error = Wire.endTransmission();
+
+    if (error == 0) {
+      Serial.print("I2C device found at address 0x");
+      if (address < 16) Serial.print("0");
+      Serial.println(address, HEX);
+      nDevices++;
+    } else if (error == 4) {
+      Serial.print("Unknown error at address 0x");
+      if (address < 16) Serial.print("0");
+      Serial.println(address, HEX);
+    }
+  }
+  if (nDevices == 0) Serial.println("No I2C devices found\n");
+  else Serial.println("done\n");
+  delay(5000);
+}
