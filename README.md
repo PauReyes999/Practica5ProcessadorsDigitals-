@@ -1,205 +1,59 @@
-# Practica 5
-# Part A
+# PRACTICA 5: Buses de Comunicación I (Introducción y I2C)
 
-Codi en Línea
+## Descripción
+El objetivo de esta práctica es comprender el funcionamiento de los buses de comunicación entre periféricos, que pueden ser internos o externos al procesador. Esta es la primera práctica de una serie de cuatro donde se estudiarán los buses I2C, SPI, I2S y USART. En cada caso, realizaremos una práctica donde controlaremos un periférico de ejemplo.
 
-#include <Arduino.h>
-#include <Wire.h>
-void setup()
-{
-  Wire.begin(8, 9);
-  Serial.begin(115200);
-  while (!Serial); // Leonardo: wait for serial monitor
-    Serial.println("\nI2C Scanner");
-}
-void loop()
-{
-  byte error, address;
-  int nDevices;
-  Serial.println("Scanning...");
-  nDevices = 0;
-  for(address = 1; address < 127; address++ )
-  {
-  // The i2c_scanner uses the return value of
-  // the Write.endTransmisstion to see if
-  // a device did acknowledge to the address.
-    Wire.beginTransmission(address);
-    error = Wire.endTransmission();
-    Serial.println (address);
-    if (error == 0)
-    {
-      Serial.print("I2C device found at address 0x");
-      if (address<16)
-        Serial.print("0");
-      Serial.print(address,HEX);
-      Serial.println(" !");
-      nDevices++;
-    }
-    else if (error==4)
-    {
-      Serial.print("Unknown error at address 0x");
-      if (address<16)
-        Serial.print("0");
-      Serial.println(address,HEX);
-    }
-  }
-  if (nDevices == 0)
-    Serial.println("No I2C devices found\n");
-  else
-    Serial.println("done\n");
-  delay(5000); // wait 5 seconds for next scan
-}
-Explicació del codi
+## Introducción Teórica
 
-## 1.Inclusió de llibreries
+### Función del Bus
+El bus permite la conexión lógica entre los subsistemas del computador, transmitiendo señales eléctricas a través de conductores metálicos con la ayuda de circuitos integrados que manejan un protocolo para transmitir datos útiles, direcciones y señales de control.
 
-#include <Arduino.h>
-#include <Wire.h>
-Aquí s'inclouen les llibreries per utilitzar les funcions bàsiques d'Arduino i comunicació I2C.
+### Tipos de Buses
+1. **Bus Paralelo**: Envía datos por bytes simultáneamente a través de varias líneas dedicadas.
+2. **Bus Serie**: Envía datos bit a bit y los reconstruye mediante registros o rutinas. Ejemplos incluyen USB, SATA, RS232, SPI, I2C e I2S.
 
-## 2.Setup
+## Bus I2C
+El estándar I2C, desarrollado por Philips en 1982, requiere únicamente dos cables: uno para la señal de reloj (CLK) y otro para el envío de datos (SDA). Cada dispositivo tiene una dirección única, y la arquitectura es de tipo maestro-esclavo, donde el maestro inicia la comunicación.
 
-void setup() {
-  Wire.begin(8, 9);
-  Serial.begin(115200);
-  while (!Serial); // Leonardo: wait for serial monitor
-  Serial.println("\nI2C Scanner");
-}
-'Wire.begin(8, 9);:' Aquí s'inicialitza la comunicació I2C al ESP32 utilitzant els pins GPIO 8 (SDA) i 9 (SCL).
-'Serial.begin(115200);:' Aquí s'inicia la comunicació serial a 115200 bauds.
-'while (!Serial);:' Aquí espera fins que el port serial estigui llest.
-'Serial.println("\nI2C Scanner");:' Mostra per pantalla el missatge "I2C Scanner" al monitor serial.
-## 3.Loop
+### Funcionamiento del Bus I2C
+La comunicación se realiza mediante tramas que incluyen:
+- 7 bits para la dirección del dispositivo esclavo.
+- 1 bit para indicar si se desea enviar o recibir información.
+- 1 bit de validación.
+- Datos enviados o recibidos del esclavo.
+- Otro bit de validación.
 
-void loop() {
-  byte error, address;
-  int nDevices;
-  Serial.println("Scanning...");
-  nDevices = 0;
-  for (address = 1; address < 127; address++) {
-    // The i2c_scanner uses the return value of
-    // the Write.endTransmission to see if
-    // a device did acknowledge to the address.
-    Wire.beginTransmission(address);
-    error = Wire.endTransmission();
-    Serial.println(address);
-    if (error == 0) {
-      Serial.print("I2C device found at address 0x");
-      if (address < 16)
-        Serial.print("0");
-      Serial.print(address, HEX);
-      Serial.println(" !");
-      nDevices++;
-    } else if (error == 4) {
-      Serial.print("Unknown error at address 0x");
-      if (address < 16)
-        Serial.print("0");
-      Serial.println(address, HEX);
-    }
-  }
-  if (nDevices == 0)
-    Serial.println("No I2C devices found\n");
-  else
-    Serial.println("done\n");
-  delay(5000); // wait 5 seconds for next scan
-}
-En aquest loop, sent la part principal del programa, es fa un escaneig per veure els dispositius connectats al bus I2C, dintre d'aquest loop es diferencien diverses parts:
+## Ventajas y Desventajas del Bus I2C
 
-Variables:
+### Ventajas
+- Requiere pocos cables.
+- Mecanismos para verificar la llegada de la señal.
 
-'byte error, address;:' Declara variables per guardar errors y direccions I2C.
-'int nDevices;:' Declara una altra variable per portar el conteig del número de dispositius I2C trobats.
-Inicio del escaneo:
+### Desventajas
+- Velocidad media-baja.
+- No es full duplex (es half duplex).
+- No hay verificación de que el contenido del mensaje es correcto (solo de la llegada del mensaje).
 
-'Serial.println("Scanning...");:' Mostra per pantalla "Scanning..." al monitor serial.
-'nDevices = 0;:' Inicialitza el conteig de dispositius a 0.
-Bucle d'escaneig:
+## Ejercicio Práctico 1: Escáner I2C
+Programar el siguiente código y colocar varios dispositivos I2C.
 
-'address = 1; address < 127; address++' El bucle for passa per totes les direccions posibles de l'I2C (de 1 a 126).
-'Wire.beginTransmission(address);:' Inicia una transmissió I2C a la direcció especificada.
-'error = Wire.endTransmission();:' Termina la transmissió y retorna un codi d'error.
-'Serial.println(address);:' Mostra per pantalla la direcció actual al monitor serial.
-En cas de que no hi hagi error ('error == 0'):
-Mostra per pantalla la direcció del dispositiu I2C trobat.
-Augmenta el conteig del número de dispositius.
-Si es detecta un error desconegut ('error == 4'):
-Mostra per pantalla un missatge d'error indicant la direcció que dona problemes
-Resultats de l'escaneig:
+```cpp
+#include <Arduino.h> 
+#include <Wire.h> 
 
-'if (nDevices == 0) Serial.println("No I2C devices found\n");:' Si no es troben dispositius, mostra el missatge "No I2C devices found\n".
-'else Serial.println("done\n");:' Si es troben dispositius, mostra "done".
-'delay(5000);:' Fa una pausa de 5000 milisegons (5 segons).
+void setup() { 
+  Wire.begin(); 
+  Serial.begin(115200); 
+  while (!Serial);             // Leonardo: wait for serial monitor 
+  Serial.println("\nI2C Scanner"); 
+} 
 
-# Part B
-
-Codi en Línea
-
-#include <Arduino.h>
-
-//YWROBOT
-//Compatible with the Arduino IDE 1.0
-//Library version:1.1
-#include <LiquidCrystal_I2C.h>
-
-LiquidCrystal_I2C lcd(0x27,20,4);  // set the LCD address to 0x27 for a 16 chars and 2 line display
-
-void setup()
-{
-  Wire.begin(8,9);
-  lcd.init();                      // initialize the lcd 
-  // Print a message to the LCD.
-  lcd.backlight();
-  lcd.setCursor(3,0);
-  lcd.print("Hello, world!");
-  lcd.setCursor(2,1);
-  lcd.print("Ywrobot Arduino!");
-   lcd.setCursor(0,2);
-  lcd.print("Arduino LCM IIC 2004");
-   lcd.setCursor(2,3);
-  lcd.print("Power By Ec-yuan!");
-}
-
-
-void loop()
-{
-}
-Explicació del codi
-
-## 1.Inclusió de llibreries
-
-#include <Arduino.h>
-#include <LiquidCrystal_I2C.h>
-Aquí s'inclouen les llibreries per poder fer servir les funcions bàsiques d'Arduino i per poder controlar una pantalla LCD a través d'un bus I2C
-
-## 2.Inicilització de pantalla LCD
-
-LiquidCrystal_I2C lcd(0x27, 20, 4);  // set the LCD address to 0x27 for a 20 chars and 4 line display
-Aquí es crea un objecte de classe 'LiquidCrystal_I2C' anomenat lcd amb la direcció I2C 0x27 especificant que la pantalla tindrà 4 files i 20 columnes.
-
-## 3.Setup
-
-void setup() {
-  Wire.begin(8, 9);
-  lcd.init();  // initialize the lcd
-  lcd.backlight();
-  lcd.setCursor(3, 0);
-  lcd.print("Hello, world!");
-  lcd.setCursor(2, 1);
-  lcd.print("Ywrobot Arduino!");
-  lcd.setCursor(0, 2);
-  lcd.print("Arduino LCM IIC 2004");
-  lcd.setCursor(2, 3);
-  lcd.print("Power By Ec-yuan!");
-}
-'Wire.begin(8, 9);:' Aquí s'inicialitza la comunicació I2C al ESP32 utilitzant els pins GPIO 8 (SDA) i 9 (SCL).
-'lcd.init();:' Inicialitza la pantalla LCD.
-'lcd.backlight();:' Encen la llum del fons de la pantalla.
-'lcd.setCursor(3, 0); lcd.print("Hello, world!");:' Coloca el cursor a la tercera columna i fila 0 y mostra el missatge "Hello, world!".
-'lcd.setCursor(2, 1); lcd.print("Ywrobot Arduino!");:' Coloca el cursor segona columna i primera fila i mostra el missatge "Ywrobot Arduino!".
-'lcd.setCursor(0, 2); lcd.print("Arduino LCM IIC 2004");:' Coloca el cursor columna zero i segona fila i mostra el missatge "Arduino LCM IIC 2004".
-'lcd.setCursor(2, 3); lcd.print("Power By Ec-yuan!");:' Coloca el cursor segona columna i tercera fila i mostra el missatge "Power By Ec-yuan!".
-## 4.Loop
-
-void loop() {
-}
-En aquest codi la funció loop està buida, ja que l'objectiu és només el d'encendre la pantalla i mostrar els missatges un únic cop, sense necessitat de cap actualització.
+void loop() { 
+  byte error, address; 
+  int nDevices; 
+  
+  Serial.println("Scanning..."); 
+  nDevices = 0; 
+  for(address = 1; address < 127; address++ ) { 
+    Wire.beginTransmission(address); 
+    error = Wire.endT
